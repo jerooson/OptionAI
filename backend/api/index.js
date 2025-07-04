@@ -1,5 +1,14 @@
-// Mock data for options scanning
-const allOptionsData = [
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Mock data for options
+const mockOptionsData = [
   {
     id: 1,
     ticker: 'AAPL',
@@ -16,7 +25,8 @@ const allOptionsData = [
     expiry: '2024-01-15',
     type: 'put',
     earningsDate: '2024-01-25',
-    daysToEarnings: 11
+    daysToEarnings: 11,
+    earningsRisk: 'medium'
   },
   {
     id: 2,
@@ -34,7 +44,8 @@ const allOptionsData = [
     expiry: '2024-01-22',
     type: 'put',
     earningsDate: '2024-01-18',
-    daysToEarnings: 4
+    daysToEarnings: 4,
+    earningsRisk: 'high'
   },
   {
     id: 3,
@@ -52,7 +63,8 @@ const allOptionsData = [
     expiry: '2024-01-29',
     type: 'put',
     earningsDate: '2024-02-15',
-    daysToEarnings: 32
+    daysToEarnings: 32,
+    earningsRisk: 'low'
   },
   {
     id: 4,
@@ -70,7 +82,8 @@ const allOptionsData = [
     expiry: '2024-01-27',
     type: 'put',
     earningsDate: '2024-01-24',
-    daysToEarnings: 10
+    daysToEarnings: 10,
+    earningsRisk: 'medium'
   },
   {
     id: 5,
@@ -88,44 +101,61 @@ const allOptionsData = [
     expiry: '2024-02-03',
     type: 'put',
     earningsDate: '2024-02-20',
-    daysToEarnings: 37
-  },
-  {
-    id: 6,
-    ticker: 'GOOGL',
-    strike: 130,
-    stockPrice: 142.50,
-    premium: 1.80,
-    returnOnMargin: 19.5,
-    ivRank: 48.2,
-    daysToExpiry: 42,
-    volume: 820,
-    openInterest: 3200,
-    sector: 'Technology',
-    delta: -0.25,
-    expiry: '2024-02-05',
-    type: 'put',
-    earningsDate: '2024-02-28',
-    daysToEarnings: 45
+    daysToEarnings: 37,
+    earningsRisk: 'low'
   }
 ];
 
-module.exports = (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+// Routes
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'OptionAI Backend is running on Vercel',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Get best options for selling
+app.get('/api/options/best', (req, res) => {
+  try {
+    // Filter for best opportunities
+    const bestOptions = mockOptionsData.filter(option => {
+      return (
+        option.ivRank >= 50 && // High IV Rank
+        option.returnOnMargin >= 20 && // Good return
+        option.volume >= 500 && // Decent volume
+        option.openInterest >= 1000 // Good open interest
+      );
+    });
+
+    // Sort by return on margin (descending)
+    bestOptions.sort((a, b) => b.returnOnMargin - a.returnOnMargin);
+
+    res.json({
+      success: true,
+      data: bestOptions,
+      count: bestOptions.length,
+      criteria: {
+        minIvRank: 50,
+        minReturn: 20,
+        minVolume: 500,
+        minOpenInterest: 1000
+      }
+    });
+  } catch (error) {
+    console.error('Error in /api/options/best:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
   }
+});
 
-  if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
+// Options scanner with filtering
+app.get('/api/options/scan', (req, res) => {
   try {
     const {
       minIvRank,
@@ -141,7 +171,7 @@ module.exports = (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    let filteredOptions = [...allOptionsData];
+    let filteredOptions = [...mockOptionsData];
 
     // Apply filters
     if (minIvRank) {
@@ -190,7 +220,7 @@ module.exports = (req, res) => {
       });
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       data: filteredOptions,
       count: filteredOptions.length,
@@ -216,4 +246,23 @@ module.exports = (req, res) => {
       message: error.message
     });
   }
-}; 
+});
+
+// Default route
+app.get('/', (req, res) => {
+  res.send('OptionAI Backend is running on Vercel');
+});
+
+// For local development
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 OptionAI Backend running on port ${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🔗 API endpoints:`);
+    console.log(`   - GET /api/options/best - Best option opportunities`);
+    console.log(`   - GET /api/options/scan - Scan with filters`);
+  });
+}
+
+module.exports = app; 
