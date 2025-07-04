@@ -7,23 +7,32 @@
       "config": {
         "distDir": "dist"
       }
+    },
+    {
+      "src": "backend/api/health.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "backend/api/options/best.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "backend/api/options/scan.js",
+      "use": "@vercel/node"
     }
   ],
-  "functions": {
-    "backend/api/health.js": {
-      "runtime": "@vercel/node"
-    },
-    "backend/api/options/best.js": {
-      "runtime": "@vercel/node"
-    },
-    "backend/api/options/scan.js": {
-      "runtime": "@vercel/node"
-    }
-  },
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1.js"
+      "src": "/api/health",
+      "dest": "/backend/api/health.js"
+    },
+    {
+      "src": "/api/options/best",
+      "dest": "/backend/api/options/best.js"
+    },
+    {
+      "src": "/api/options/scan",
+      "dest": "/backend/api/options/scan.js"
     },
     {
       "src": "/(.*)",
