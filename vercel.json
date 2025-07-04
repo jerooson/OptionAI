@@ -9,30 +9,18 @@
       }
     },
     {
-      "src": "backend/api/health.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "backend/api/options/best.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "backend/api/options/scan.js",
+      "src": "backend/api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/health",
-      "dest": "/backend/api/health.js"
+      "src": "/api/(.*)",
+      "dest": "/backend/api/$1.js"
     },
     {
-      "src": "/api/options/best",
-      "dest": "/backend/api/options/best.js"
-    },
-    {
-      "src": "/api/options/scan",
-      "dest": "/backend/api/options/scan.js"
+      "src": "/",
+      "dest": "/frontend/dist/index.html"
     },
     {
       "src": "/(.*)",
